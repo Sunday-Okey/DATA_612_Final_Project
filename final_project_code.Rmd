@@ -7,24 +7,66 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(magrittr)
+library(ggthemes)
+library(skimr)
 ```
 
-## R Markdown
+Let's read in our data
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+white_df <- read_delim("data/winequality-white.csv")
+```
+```{r}
+head(white_df)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+red_df <- read_delim("data/winequality-red.csv")
+```
+```{r}
+head(red_df)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+white_df$color <- rep("White",times= nrow(white_df))
+head(white_df)
+```
+
+```{r}
+red_df$color <- rep("Red",times= nrow(red_df))
+head(red_df)
+```
+```{r}
+wine_df <- rbind(white_df, red_df)
+head(wine_df)
+
+```
+```{r}
+nrow(wine_df)
+```
+
+```{r}
+colnames(wine_df)
+```
+
+```{r}
+ncol(wine_df)
+```
+
+```{r}
+# Count the number of NAs
+wine_df %>%
+  summarise(across(everything(), ~ sum(is.na(.))))
+```
+```{r}
+# Check for duplicate rows
+wine_df %>%
+  summarize(dist = nrow(distinct(.)))
+```
+
+```{r}
+nrow(wine_df)
+```
+
