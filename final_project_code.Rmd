@@ -11,6 +11,14 @@ library(tidyverse)
 library(magrittr)
 library(ggthemes)
 library(skimr)
+library(mosaic)
+library(car)
+library(ggthemes)
+library(gmodels)
+library(DescTools)
+library(ggfortify)
+library(ggpubr)
+library(GGally)
 ```
 
 Let's read in our data
@@ -52,6 +60,17 @@ colnames(wine_df)
 ```
 
 ```{r}
+#Let's replace space in the column variables with
+#underscore
+
+names(wine_df) <- gsub(" ", "_", names(wine_df))
+```
+
+```{r}
+colnames(wine_df)
+```
+
+```{r}
 ncol(wine_df)
 ```
 
@@ -60,6 +79,11 @@ ncol(wine_df)
 wine_df %>%
   summarise(across(everything(), ~ sum(is.na(.))))
 ```
+
+```{r}
+View(wine_df)
+```
+
 ```{r}
 # Check for duplicate rows
 wine_df %>%
@@ -68,5 +92,308 @@ wine_df %>%
 
 ```{r}
 nrow(wine_df)
+```
+```{r}
+wine_df %>% 
+  select(c(-color)) %>% 
+cor()
+```
+
+# Univariate EDA(Exploration Data Analysis)
+
+```{r}
+ggplot(data = wine_df, aes(x=quality)) + 
+    geom_bar(fill = 'dark blue', colour='darkgrey', alpha= 0.8) + 
+  theme_bw()
+```
+
+```{r}
+#Distribution of alcohol
+ggplot(wine_df, mapping = aes(x = alcohol)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of Alcohol") +
+  xlab("Alcohol Content") +
+  ylab("Frequency") +
+  theme_bw()
+
+```
+
+```{r}
+#Distribution of pH
+ggplot(wine_df, mapping = aes(x = pH)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of pH") +
+  xlab("pH level") +
+  ylab("Frequency") +
+  theme_bw()
+```
+
+```{r}
+#Distribution of Fixed Acidity
+ggplot(wine_df, mapping = aes(x = fixed_acidity)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of fixed acidity") +
+  xlab("Fixed acidity") + 
+  ylab("Frequency") + 
+  theme_bw()
+```
+
+```{r}
+#Distribution of total sulfur dioxide
+ggplot(wine_df, mapping = aes(x = total_sulfur_dioxide)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of total sulfur dioxide") +
+  xlab("total_sulfur_dioxide") + 
+  ylab("Frequency") + 
+  theme_bw()
+
+```
+
+```{r}
+#Distribution of free sulfur dioxide
+ggplot(wine_df, mapping = aes(x = free_sulfur_dioxide)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of free sulfur dioxide") +
+  xlab("free_sulfur_dioxide") + 
+  ylab("Frequency") + 
+  theme_bw()
+```
+
+```{r}
+#Distribution of density
+ggplot(wine_df, mapping = aes(x = density)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of density") +
+  xlab("fdensity") + 
+  ylab("Frequency") + 
+  theme_bw()
+```
+
+```{r}
+#Distribution of sulphates
+ggplot(wine_df, mapping = aes(x = sulphates)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of sulphates") +
+  xlab("fdensity") + 
+  ylab("Frequency") + 
+  theme_bw()
+```
+
+```{r}
+#Distribution of sulphates
+ggplot(wine_df, mapping = aes(x =  residual_sugar )) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of  residual sugar ") +
+  xlab("Residual Sugar ") + 
+  ylab("Frequency") + 
+  theme_bw()
+```
+ 
+ 
+```{r}
+ggplot(wine_df, mapping = aes(x = citric_acid)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of  citric acid") +
+  xlab("Citric acid ") + 
+  ylab("Frequency") + 
+  theme_bw()
+```
+
+```{r}
+ggplot(wine_df, mapping = aes(x = chlorides)) +
+  geom_histogram(bins = 20, color = "dark blue", fill = "blue") +
+  ggtitle("Distribution of chlorides") +
+  xlab("Chlorides") + 
+  ylab("Frequency") + 
+  theme_bw()
+
+```
+
+
+```{r}
+wine_attribute <- function(feature, varname = '', bins = 20) {
+  ## Building the histogram:
+  hist <- ggplot(data = wine_df) +
+      geom_histogram(aes(x=feature), bins = bins,
+                     fill = 'dark blue', colour='darkgrey', alpha= 0.8) +
+      labs(x = varname)
+  ## Histogram scaling y_log10:
+  histYlog <- hist + scale_y_log10() +
+      labs(y = 'log10(count)', x= varname)
+  
+  ## Histogram scaling x_log10:
+  histXlog <- hist + scale_x_log10() + 
+      labs(x = paste('log10(', varname,')'))
+  ## Building the boxplot highlighting the outliers:
+  outliers <- ggplot(wine_df, aes(x = 1, y = feature)) + 
+      geom_jitter(alpha = 0.1 ) +
+      geom_boxplot(alpha = 0.2, color = 'orange') + labs(x ='distance from mean', y= varname)
+  
+  ## Arranging all the plots:
+  histPlots <- ggarrange(hist, histXlog, histYlog, ncol=1, nrow=3)
+  ggarrange(outliers, histPlots,ncol=2, widths = c(1,1.5))
+  
+}
+```
+
+```{r}
+wine_attribute(wine_df$alcohol, varname = 'Alcohol (% of vol)')
+```
+
+
+```{r}
+ggcorr(wine_df[, 1:13], geom = "blank", label = TRUE, 
+       hjust = 0.95, layout.exp = 2) +
+  geom_point(size = 8, aes(color = coefficient > 0, alpha = abs(coefficient) > 0.35)) +
+  scale_alpha_manual(values = c("TRUE" = 0.25, "FALSE" = 0)) +
+  guides(color = FALSE, alpha = FALSE)
+```
+
+
+```{r}
+variables <- c('quality', 'alcohol','volatile_acidity',
+               'density', 'residual_sugar')
+
+## Plotting ggpairs for the selected attributed:
+ggpairs(wine_df[variables], aes(alpha=0.3))
+```
+
+
+
+```{r}
+ggplot(wine_df, mapping = aes(x = pH, y = quality)) +
+    geom_point(color='#2980B9', size = 2) + 
+  
+    xlab("pH") +
+    ylab("quality") +
+    ggtitle("pH vs quality")+
+    theme_bw()
+```
+Q1: Is a certain type of wine (red or white) associated with higher quality?
+
+```{r}
+wine_df %>% 
+  group_by(color) %>% 
+  summarise(mean = mean(quality))
+```
+
+Q2: What level of acidity (pH value) receives the highest average rating?
+
+```{r}
+summary(wine_df$pH)
+```
+
+```{r}
+# Bin edges that will be used to "cut" the data into groups
+bin_edges <- c(2.72, 3.11, 3.21, 3.32, 4.01)
+
+#Fill in this list with five values we just found
+```
+
+```{r}
+# Labels for the four acidity level groups
+bin_names = c('high', 'mod_high', 'medium', 'low') # Name each acidity level category
+```
+
+```{r}
+# Creates acidity_levels column
+wine_df$'acidity_levels' <- cut(wine_df$pH, bin_edges, labels = bin_names, right = F, include.lowest = T)
+# Checks for successful creation of this column
+head(wine_df)
+```
+```{r}
+glimpse(wine_df)
+```
+```{r}
+# Find the mean quality of each acidity level with groupby 5.785850
+
+wine_df %>% 
+  group_by(acidity_levels) %>% 
+  summarise(mean = mean(quality))
+
+```
+
+Q3. Do wines with higher alcoholic content receive better ratings?
+```{r}
+# get the median amount of alcohol content
+median_alc <- median(wine_df$alcohol)
+```
+
+```{r}
+# select samples with alcohol content less than the median
+high_alcohol <- wine_df %>% 
+  filter(alcohol >= median_alc)
+# select samples with alcohol content greater than or equal to the median
+
+low_alcohol <- wine_df %>% 
+  filter(alcohol < median_alc)
+# get mean quality rating for the low alcohol and high alcohol groups
+
+```
+
+```{r}
+mean(high_alcohol$alcohol)
+```
+
+```{r}
+mean(low_alcohol$alcohol)
+```
+
+
+Q:4 Do sweeter wines (more residual sugar) receive better ratings?
+
+```{r}
+# get the median amount of residual sugar
+median_res_sugar <- median(wine_df$residual_sugar)
+```
+
+```{r}
+# select samples with residual sugar less than the median
+high_sugar <- wine_df %>% 
+  filter(residual_sugar > median_res_sugar)
+# select samples with residual sugar greater than or equal to the median
+low_sugar <- wine_df %>% 
+  filter(residual_sugar < median_res_sugar)
+
+```
+
+```{r}
+mean(low_sugar$quality)
+```
+```{r}
+mean(high_sugar$quality)
+```
+```{r}
+new_data <- wine_df %>% 
+  group_by(color) %>% 
+  summarise(mean_qua = mean(quality))
+
+ggplot(data = new_data, mapping = aes(x=color, y = mean_qua, fill = color)) + 
+    geom_bar(alpha= 0.9, stat = 'identity') +  scale_fill_manual(values=c("red","white"))
+```
+
+```{r}
+wine_df %>% 
+  group_by(quality,color) %>% 
+  summarise(count = n(), .groups = 'drop') -> data
+data
+```
+
+```{r}
+ggplot(data, mapping = aes(x=quality, y = count,fill = color)) + 
+    geom_bar(alpha= 0.9, stat = "identity", position = position_dodge()) +  scale_fill_manual(values=c("red","white"))
+```
+```{r}
+wine_df %>% 
+  group_by(color) %>% 
+  mutate(count2 = n(), .groups = 'drop') %>% 
+  group_by(quality,color) %>% 
+  mutate(count1 = n(), .groups = 'keep') %>% 
+  summarise(prop = count1 / count2, .groups = 'keep') -> data2
+
+```
+```{r}
+ggplot(data2, mapping = aes(x=quality, y = prop,fill = color)) + 
+    geom_bar(alpha= 0.9, stat = "identity", position = position_dodge()) +  scale_fill_manual(values=c("red","white"))
 ```
 
